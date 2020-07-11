@@ -26,15 +26,14 @@ const { Option } = Select;
 
 export default class Staff extends Component {
     state = {
-        visible: false,
+        visible: 0,
         staff_details: [],
-        formValue: {},
     };
 
-    okModal = () => {
+    handleAdd = () => {
         this.formRef_currnt.validateFields().then((values) => {
             this.setState({
-                visible: false,
+                visible: 0,
                 staff_details: [...this.state.staff_details, values],
             });
             this.formRef_currnt.resetFields();
@@ -56,13 +55,16 @@ export default class Staff extends Component {
     };
 
     handleUpdate = (record) => {
-        const { formValue } = this.state;
-        this.setState({ visible: true });
-        // this.record = record;
-        this.setState({
-            formValue: record,
-        });
-        console.log("1", formValue, record);
+        this.record = record;
+        this.setState({ visible: 2 });
+        // this.setState({
+        //     staff_details: record,
+        // });
+        console.log("1", record);
+    };
+
+    okUpate = () => {
+        console.log("okUpate");
     };
 
     initColumns = () => {
@@ -166,13 +168,13 @@ export default class Staff extends Component {
         this.initColumns();
     }
     render() {
-        const { visible, staff_details, formValue } = this.state;
-        // const record = this.record || {};
+        const { visible, staff_details } = this.state;
+        const record = this.record || {};
         const title = (
             <Button
                 type="primary"
                 icon={<PlusOutlined />}
-                onClick={() => this.setState({ visible: true })}
+                onClick={() => this.setState({ visible: 1 })}
             >
                 添加
             </Button>
@@ -188,28 +190,46 @@ export default class Staff extends Component {
                 </div>
                 <div className="content">
                     <Card title={title}>
-                        {visible && (
-                            <Modal
-                                // title={this.record ? "更新信息" : "添加信息"}
-                                title="员工添加"
-                                visible={visible}
-                                okText="确定"
-                                cancelText="取消"
-                                onOk={this.okModal}
-                                onCancel={() => {
-                                    this.setState({ visible: false });
-                                    this.formRef_currnt.resetFields();
+                        <Modal
+                            // title={this.record ? "更新信息" : "添加信息"}
+                            title="信息添加"
+                            visible={visible === 1}
+                            okText="确定"
+                            cancelText="取消"
+                            onOk={this.handleAdd}
+                            onCancel={() => {
+                                this.setState({ visible: 0 });
+                                this.formRef_currnt.resetFields();
+                            }}
+                        >
+                            <StaffModal
+                                // record={record}
+                                getForm={(formEntity) => {
+                                    this.formRef_currnt = formEntity;
                                 }}
-                            >
-                                <StaffModal
-                                    // record={record}
-                                    formValue={formValue}
-                                    getForm={(formEntity) => {
-                                        this.formRef_currnt = formEntity;
-                                    }}
-                                />
-                            </Modal>
-                        )}
+                            />
+                        </Modal>
+
+                        <Modal
+                            // title={this.record ? "更新信息" : "添加信息"}
+                            title="信息修改"
+                            visible={visible === 2}
+                            okText="确定"
+                            cancelText="取消"
+                            onOk={this.okUpate}
+                            onCancel={() => {
+                                this.setState({ visible: 0 });
+                                this.formRef_current_2.resetFields();
+                            }}
+                        >
+                            <StaffModal
+                                record={record}
+                                // formValue={formValue}
+                                getForm={(formEntity) => {
+                                    this.formRef_current_2 = formEntity;
+                                }}
+                            />
+                        </Modal>
 
                         <Table
                             columns={this.columns}
@@ -248,19 +268,6 @@ class StaffQuery extends Component {
 
 class StaffModal extends Component {
     formRef = React.createRef();
-    // constructor(props) {
-    //     super(props);
-    //     let detailList = {};
-
-    //     this.state = {
-    //         detailList,
-    //     };
-
-    //     const { record } = this.props;
-    //     if (record) {
-    //         this.setState({ detailList: record });
-    //     }
-    // }
 
     initialValues = () => {
         this.layout = {
@@ -325,27 +332,25 @@ class StaffModal extends Component {
 
     componentWillMount() {
         this.initialValues();
+
+        // const { record } = this.props;
+        // this.isUpdate = !!record;
+        // this.product = record;
     }
-    // componentDidUpdate() {
-    //     // const record = this.props;
-    //     // this.isUpate = !!record;
-    //     // this.detail = record || {};
-    //     this.formRef.current.setFieldsValue({
-    //         record: this.props.record,
-    //     });
-    // }
 
     componentDidMount() {
         this.props.getForm(this.formRef.current);
+        // this.props.getFormm(this.formRef.current);
     }
     render() {
-        const { formValue } = this.props;
+        const { record } = this.props;
+
         return (
             <Form
                 ref={this.formRef}
                 {...this.layout}
                 validateMessages={this.errors}
-                initialValues={formValue}
+                initialValues={record}
             >
                 <Form.Item
                     label="姓名"
