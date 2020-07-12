@@ -19,7 +19,12 @@ import {
     Card,
 } from "antd";
 import moment from "moment";
+// import "moment/locale/zh-cn";
+import locale from "antd/es/date-picker/locale/zh_CN";
 import { UserOutlined, PlusOutlined } from "@ant-design/icons";
+// import { reqStaff } from "../api/ajax";
+import axios from "axios";
+import "../mock";
 
 const { Item } = Form;
 const { Option } = Select;
@@ -27,9 +32,11 @@ const { Option } = Select;
 export default class Staff extends Component {
     state = {
         visible: 0,
+        loading: false,
         staff_details: [],
     };
 
+    // 添加信息确认操作
     handleAdd = () => {
         this.formRef_currnt.validateFields().then((values) => {
             this.setState({
@@ -41,30 +48,68 @@ export default class Staff extends Component {
         });
     };
 
-    // 删除表格数据
+    // 删除(一条)表格数据
     handleDelete = (index) => {
         const dataSource = [...this.state.staff_details];
         // this.setState({
         //     dataSource: dataSource.filter(item => item.name !== name)
         // });
         dataSource.splice(index, 1);
+        // console.log(dataSource.splice(index, 1));
         this.setState({
             staff_details: dataSource,
         });
         message.success("删除成功");
     };
 
-    handleUpdate = (record) => {
+    // 打开修改信息Modal
+    handleUpdate = (record, index) => {
         this.record = record;
+        this.index = index;
         this.setState({ visible: 2 });
-        // this.setState({
-        //     staff_details: record,
-        // });
-        console.log("1", record);
+
+        record.entry_time = moment(record.entry_time) || null;
+        // 拿到数据之后，对数据进行格式处理，转换成 moment 格式
+        console.log("record.entry_time", record.entry_time);
+
+        /* 默认值会在页面渲染的时候就渲染在 Form.Item 中，但是一般数据请求拿到返回值存在异步，
+		会晚于渲染，因此日期格式转换的操作不能放在 DatePicker中。正确的日期处理，应该放在获取数据之后 */
     };
 
+    // 修改信息确认操作
     okUpate = () => {
-        console.log("okUpate");
+        this.formRef_current_2.validateFields().then((values) => {
+            const { index } = this;
+            const new_staff = [...this.state.staff_details];
+            /* 因为我们下面要更新state状态,react中建议我们尽量产生一个新的数组再去更新
+			所以用到扩展(浅拷贝 => 形成新的数组)*/
+
+            new_staff.splice(index, 1, values);
+            this.setState({
+                visible: 0,
+                staff_details: new_staff,
+                /* staff_details: new_staff.splice(index, 1, values),
+				不能够直接这样写,splice()会返回一个新的数组！！我们只是做原有的修改 */
+            });
+            this.formRef_current_2.resetFields();
+            message.success("更新成功");
+        });
+    };
+
+    // 搜索确认操作：不完全字段匹配，filter()：1.遍历数组 2.检索符合内容
+    submitEnter = (search) => {
+        const { staff_details } = this.state;
+        console.log("search", search);
+
+        if (search.name) {
+            this.setState({
+                staff_details: staff_details.filter(
+                    (item) => item.name.indexOf(search.name) !== -1
+                ),
+            });
+        } else {
+            this.getStallList();
+        }
     };
 
     initColumns = () => {
@@ -74,7 +119,7 @@ export default class Staff extends Component {
                 dataIndex: "name",
                 key: "name",
                 align: "center",
-                // width: 150,
+                width: 150,
                 fixed: "left",
                 render: (_, record) => <LinkButton>{record.name}</LinkButton>,
             },
@@ -82,38 +127,38 @@ export default class Staff extends Component {
                 title: "年龄",
                 dataIndex: "age",
                 align: "center",
-                // width: 100,
+                width: 100,
                 key: "age",
             },
             {
                 title: "性别",
                 dataIndex: "sex",
                 align: "center",
-                // width: 100,
+                width: 100,
                 key: "sex",
             },
             {
                 title: "职务",
                 dataIndex: "duty",
-                // width: 150,
+                width: 150,
                 align: "center",
                 key: "duty",
             },
             {
                 title: "入职时间",
-                // width: 200,
+                width: 200,
                 key: "entry_time",
                 dataIndex: "entry_time",
                 align: "center",
                 render: (_, record) => (
                     <span>
-                        {moment(record.entry_time).format("YYYY年MM月DD日")}
+                        {moment(record.entry_time).format("YYYY-MM-DD")}
                     </span>
                 ),
             },
             {
                 title: "联系电话",
-                // width: 200,
+                width: 200,
                 key: "phone",
                 dataIndex: "phone",
                 align: "center",
@@ -122,7 +167,7 @@ export default class Staff extends Component {
                 title: "家庭住址",
                 dataIndex: "address",
                 align: "center",
-                // width: 200,
+                width: 200,
                 key: "address",
                 render: (_, record) => (
                     <Space size="small">{record.address}</Space>
@@ -133,7 +178,7 @@ export default class Staff extends Component {
                 dataIndex: "hobby",
                 align: "center",
                 key: "hobby",
-                // width: 180,
+                width: 180,
                 render: (_, record) => (
                     <Tag color="volcano">{record.hobby}</Tag>
                 ),
@@ -144,10 +189,12 @@ export default class Staff extends Component {
                 align: "center",
                 fixed: "right",
                 key: "handle",
-                // width: 150,
+                width: 150,
                 render: (_, record, index) => (
                     <Space size="middle">
-                        <LinkButton onClick={() => this.handleUpdate(record)}>
+                        <LinkButton
+                            onClick={() => this.handleUpdate(record, index)}
+                        >
                             编辑
                         </LinkButton>
                         <Popconfirm
@@ -164,11 +211,31 @@ export default class Staff extends Component {
         ];
     };
 
+    // 请求表格数据
+    getStallList = () => {
+        this.setState({ loading: true });
+        axios.get("/staff", { dataType: "json" }).then((res) => {
+            console.log("getStallList", res);
+
+            if (res.status === 200) {
+                const staff_details = res.data.result;
+                this.setState({ staff_details, loading: false });
+            } else {
+                message.error("获取员工信息失败!");
+            }
+        });
+    };
+
     componentWillMount() {
         this.initColumns();
     }
+
+    componentDidMount() {
+        this.getStallList();
+    }
+
     render() {
-        const { visible, staff_details } = this.state;
+        const { visible, staff_details, loading } = this.state;
         const record = this.record || {};
         const title = (
             <Button
@@ -186,13 +253,13 @@ export default class Staff extends Component {
                     <div className="header-left">员工信息</div>
                 </div>
                 <div className="submit">
-                    <StaffQuery />
+                    <StaffQuery handleSubmt={this.submitEnter} />
                 </div>
                 <div className="content">
                     <Card title={title}>
                         <Modal
                             // title={this.record ? "更新信息" : "添加信息"}
-                            title="信息添加"
+                            title="添加信息"
                             visible={visible === 1}
                             okText="确定"
                             cancelText="取消"
@@ -212,7 +279,7 @@ export default class Staff extends Component {
 
                         <Modal
                             // title={this.record ? "更新信息" : "添加信息"}
-                            title="信息修改"
+                            title="修改信息"
                             visible={visible === 2}
                             okText="确定"
                             cancelText="取消"
@@ -224,7 +291,6 @@ export default class Staff extends Component {
                         >
                             <StaffModal
                                 record={record}
-                                // formValue={formValue}
                                 getForm={(formEntity) => {
                                     this.formRef_current_2 = formEntity;
                                 }}
@@ -232,9 +298,12 @@ export default class Staff extends Component {
                         </Modal>
 
                         <Table
+                            rowKey="id"
+                            loading={loading}
                             columns={this.columns}
                             dataSource={staff_details}
-                            scroll={{ x: 800 }}
+                            scroll={{ x: 1500 }}
+                            pagination={{ defaultPageSize: 5 }}
                             // bordered
                         />
                     </Card>
@@ -247,14 +316,14 @@ export default class Staff extends Component {
 // 查询栏
 class StaffQuery extends Component {
     handleQuery = (values) => {
-        console.log(values);
+        this.props.handleSubmt(values);
     };
 
     render() {
         return (
             <Form layout="inline" onFinish={this.handleQuery}>
                 <Item label="员工姓名" name="name">
-                    <Input placeholder="员工姓名" />
+                    <Input placeholder="员工姓名" allowClear />
                 </Item>
                 <Item>
                     <Button type="primary" htmlType="submit">
@@ -274,16 +343,16 @@ class StaffModal extends Component {
             labelCol: { span: 4 },
             wrapperCol: { span: 20 },
         };
-        this.errors = {
-            required: "'${name}'是必填项！！",
+        this.validateMessages = {
+            required: "${label}是必填项！！",
             types: {
-                number: "'${label}'为非数字！！",
+                number: "${label}为非数字！！",
             },
             number: {
-                range: "'${label}'必须在$'{min}'到$'{max}'！！",
+                range: "${label}必须在${min}到${max}之间！！",
             },
             string: {
-                range: "'${label}'个数必须介于$'{min}'和$'{max}'之间",
+                range: "${label}必须是${min}到${max}个字符！！",
             },
         };
 
@@ -340,7 +409,21 @@ class StaffModal extends Component {
 
     componentDidMount() {
         this.props.getForm(this.formRef.current);
-        // this.props.getFormm(this.formRef.current);
+    }
+
+    componentDidUpdate() {
+        const { name, age, sex, duty, entry_time, phone, address, hobby } =
+            this.props.record || {};
+        this.formRef.current.setFieldsValue({
+            name,
+            age,
+            sex,
+            duty,
+            entry_time,
+            phone,
+            address,
+            hobby,
+        }); // ...必须要一个个item属性名称对应,在这个生命周期使用这个方法才能完成(第二个)初始值的更新
     }
     render() {
         const { record } = this.props;
@@ -349,13 +432,12 @@ class StaffModal extends Component {
             <Form
                 ref={this.formRef}
                 {...this.layout}
-                validateMessages={this.errors}
+                validateMessages={this.validateMessages}
                 initialValues={record}
             >
                 <Form.Item
                     label="姓名"
                     name="name"
-                    // initialValue={recordName}
                     rules={[
                         {
                             required: true,
@@ -376,7 +458,6 @@ class StaffModal extends Component {
                 <Form.Item
                     label="年龄"
                     name="age"
-                    // initialValue={isUpate ? detail.age : ""}
                     rules={[
                         {
                             required: true,
@@ -392,7 +473,6 @@ class StaffModal extends Component {
                 <Form.Item
                     label="性别"
                     name="sex"
-                    // initialValue={isUpate ? detail.sex : ""}
                     rules={[
                         {
                             required: true,
@@ -416,7 +496,7 @@ class StaffModal extends Component {
                         {
                             required: true,
                             // type: 'object',
-                            message: "职务 尚未选择！！",
+                            message: "职务尚未选择！！",
                         },
                     ]}
                 >
@@ -435,15 +515,18 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            // type: 'object',
-                            message: "入职时间 尚未选择！！",
+                            // type: "object",
+                            message: "入职时间尚未选择！！",
                         },
                     ]}
                 >
                     <DatePicker
+                        // defaultValue={moment(record.entry_time || {}, "YYYY-MM-DD")}
+                        format="YYYY/MM/DD"
+                        locale={locale}
                         placeholder="请选择日期"
                         style={{ width: 280 }}
-                        showToday={false}
+                        showToday={true}
                     />
                 </Form.Item>
 
@@ -453,7 +536,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            message: "请输入你的 电话!！",
+                            message: "请输入你的电话!！",
                         },
                     ]}
                 >
@@ -470,7 +553,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            message: "家庭地址 尚未选择！！",
+                            message: "家庭地址尚未选择！！",
                         },
                     ]}
                 >
