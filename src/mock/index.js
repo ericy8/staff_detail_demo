@@ -6,7 +6,7 @@ const Mock = require('mockjs')
 和Mock官网文档 */
 
 const data = Mock.mock('/staff', {
-	"result|10": [ // 意思是data数组中有10条数据
+	"result|5": [ // 意思是data数组中有10条数据
 		{
 			"id|+1": 0,
 			"name": "@cname()",
@@ -17,7 +17,7 @@ const data = Mock.mock('/staff', {
 			"phone": /^1(3|5|7|8|9)\d{9}$/,
 			// "address": "@county(true)",
 			"address|1": [["江西", "南昌", "赣州"], ["广东", "东莞", "常平"]],
-			"hobby": "@cword(2)"
+			"hobby": "@cword(2,3)"
 		}
 	]
 })

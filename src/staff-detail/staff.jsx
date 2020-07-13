@@ -19,8 +19,6 @@ import {
     Card,
 } from "antd";
 import moment from "moment";
-// import "moment/locale/zh-cn";
-import locale from "antd/es/date-picker/locale/zh_CN";
 import { UserOutlined, PlusOutlined } from "@ant-design/icons";
 // import { reqStaff } from "../api/ajax";
 import axios from "axios";
@@ -38,12 +36,12 @@ export default class Staff extends Component {
 
     // 添加信息确认操作
     handleAdd = () => {
-        this.formRef_currnt.validateFields().then((values) => {
+        this.formRef_current.validateFields().then((values) => {
             this.setState({
                 visible: 0,
                 staff_details: [...this.state.staff_details, values],
             });
-            this.formRef_currnt.resetFields();
+            this.formRef_current.resetFields();
             message.success("添加成功");
         });
     };
@@ -106,7 +104,7 @@ export default class Staff extends Component {
                 staff_details: staff_details.filter(
                     (item) => item.name.indexOf(search.name) !== -1
                 ),
-            });
+            }); // filter不会形成新的数组，所以可以这样写
         } else {
             this.getStallList();
         }
@@ -179,8 +177,10 @@ export default class Staff extends Component {
                 align: "center",
                 key: "hobby",
                 width: 180,
-                render: (_, record) => (
-                    <Tag color="volcano">{record.hobby}</Tag>
+                render: (text, record) => (
+                    <Tag color={text.length > 2 ? "green" : "blue"}>
+                        {record.hobby}
+                    </Tag>
                 ),
             },
             {
@@ -226,7 +226,8 @@ export default class Staff extends Component {
         });
     };
 
-    componentWillMount() {
+    // 仅仅是新别名而已
+    UNSAFE_componentWillMount() {
         this.initColumns();
     }
 
@@ -266,13 +267,13 @@ export default class Staff extends Component {
                             onOk={this.handleAdd}
                             onCancel={() => {
                                 this.setState({ visible: 0 });
-                                this.formRef_currnt.resetFields();
+                                this.formRef_current.resetFields();
                             }}
                         >
                             <StaffModal
                                 // record={record}
                                 getForm={(formEntity) => {
-                                    this.formRef_currnt = formEntity;
+                                    this.formRef_current = formEntity;
                                 }}
                             />
                         </Modal>
@@ -303,7 +304,7 @@ export default class Staff extends Component {
                             columns={this.columns}
                             dataSource={staff_details}
                             scroll={{ x: 1500 }}
-                            pagination={{ defaultPageSize: 5 }}
+                            pagination={{ defaultPageSize: 7 }}
                             // bordered
                         />
                     </Card>
@@ -344,15 +345,15 @@ class StaffModal extends Component {
             wrapperCol: { span: 20 },
         };
         this.validateMessages = {
-            required: "${label}是必填项！！",
+            required: "${label}是必填项",
             types: {
-                number: "${label}为非数字！！",
+                number: "${label}为非数字",
             },
             number: {
-                range: "${label}必须在${min}到${max}之间！！",
+                range: "${label}必须在${min}到${max}之间",
             },
             string: {
-                range: "${label}必须是${min}到${max}个字符！！",
+                range: "${label}必须是${min}到${max}个字符",
             },
         };
 
@@ -399,7 +400,7 @@ class StaffModal extends Component {
         ];
     };
 
-    componentWillMount() {
+    UNSAFE_componentWillMount() {
         this.initialValues();
 
         // const { record } = this.props;
@@ -411,6 +412,8 @@ class StaffModal extends Component {
         this.props.getForm(this.formRef.current);
     }
 
+    /* 打开表单的初始值问题，不同表单的初始值不会同步更新，所以需要我们异步请求传过来的record值
+    并赋于到相应的表单上，所以要在接受到新的props立即执行即这个生命周期方法(异步,保证每次更新只调用一次) */
     componentDidUpdate() {
         const { name, age, sex, duty, entry_time, phone, address, hobby } =
             this.props.record || {};
@@ -425,6 +428,7 @@ class StaffModal extends Component {
             hobby,
         }); // ...必须要一个个item属性名称对应,在这个生命周期使用这个方法才能完成(第二个)初始值的更新
     }
+
     render() {
         const { record } = this.props;
 
@@ -467,7 +471,10 @@ class StaffModal extends Component {
                         },
                     ]}
                 >
-                    <InputNumber style={{ width: 100 }} />
+                    <InputNumber
+                        style={{ width: 115 }}
+                        placeholder="请选择年龄"
+                    />
                 </Form.Item>
 
                 <Form.Item
@@ -476,7 +483,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            message: "请选择性别！",
+                            message: "请选择性别",
                         },
                     ]}
                 >
@@ -496,11 +503,15 @@ class StaffModal extends Component {
                         {
                             required: true,
                             // type: 'object',
-                            message: "职务尚未选择！！",
+                            message: "职务尚未选择",
                         },
                     ]}
                 >
-                    <Select style={{ width: 150 }} allowClear>
+                    <Select
+                        style={{ width: 150 }}
+                        allowClear
+                        placeholder="请选择职务"
+                    >
                         {this.works.map((item, idx) => (
                             <Option key={idx} value={item}>
                                 {item}
@@ -516,14 +527,13 @@ class StaffModal extends Component {
                         {
                             required: true,
                             // type: "object",
-                            message: "入职时间尚未选择！！",
+                            message: "入职时间尚未选择",
                         },
                     ]}
                 >
                     <DatePicker
                         // defaultValue={moment(record.entry_time || {}, "YYYY-MM-DD")}
                         format="YYYY/MM/DD"
-                        locale={locale}
                         placeholder="请选择日期"
                         style={{ width: 280 }}
                         showToday={true}
@@ -536,7 +546,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            message: "请输入你的电话!！",
+                            message: "请输入你的电话",
                         },
                     ]}
                 >
@@ -553,7 +563,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            message: "家庭地址尚未选择！！",
+                            message: "家庭地址尚未选择",
                         },
                     ]}
                 >
