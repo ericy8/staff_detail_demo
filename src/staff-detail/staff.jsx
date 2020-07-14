@@ -15,11 +15,16 @@ import {
     Select,
     DatePicker,
     Cascader,
-    Popconfirm,
     Card,
+    Tooltip,
 } from "antd";
 import moment from "moment";
-import { UserOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+    UserOutlined,
+    PlusOutlined,
+    QuestionCircleOutlined,
+    ExclamationCircleOutlined,
+} from "@ant-design/icons";
 // import { reqStaff } from "../api/ajax";
 import axios from "axios";
 import "../mock";
@@ -47,17 +52,22 @@ export default class Staff extends Component {
     };
 
     // 删除(一条)表格数据
-    handleDelete = (index) => {
-        const dataSource = [...this.state.staff_details];
-        // this.setState({
-        //     dataSource: dataSource.filter(item => item.name !== name)
-        // });
-        dataSource.splice(index, 1);
-        // console.log(dataSource.splice(index, 1));
-        this.setState({
-            staff_details: dataSource,
-        });
-        message.success("删除成功");
+    handleDelete = (record, index) => {
+        Modal.confirm({
+            content: `确定要删除员工 ${record.name} 吗？`,
+            icon: <ExclamationCircleOutlined />,
+            onOk: () => {
+                const dataSource = [...this.state.staff_details];
+                // this.setState({
+                //     dataSource: dataSource.filter(item => item.name !== name)
+                // });
+                dataSource.splice(index, 1); // 会形成新数组
+                this.setState({
+                    staff_details: dataSource,
+                });
+                message.success(`删除员工 ${record.name} 成功`);
+            },
+        }); // 这个confirm自带取消确认按钮隐藏Modal的效果
     };
 
     // 打开修改信息Modal
@@ -87,7 +97,7 @@ export default class Staff extends Component {
                 visible: 0,
                 staff_details: new_staff,
                 /* staff_details: new_staff.splice(index, 1, values),
-				不能够直接这样写,splice()会返回一个新的数组！！我们只是做原有的修改 */
+				不能直接这样写,splice()会返回一个新的数组！！我们只是做原有的修改 */
             });
             this.formRef_current_2.resetFields();
             message.success("更新成功");
@@ -115,7 +125,6 @@ export default class Staff extends Component {
             {
                 title: "姓名",
                 dataIndex: "name",
-                key: "name",
                 align: "center",
                 width: 150,
                 fixed: "left",
@@ -126,26 +135,22 @@ export default class Staff extends Component {
                 dataIndex: "age",
                 align: "center",
                 width: 100,
-                key: "age",
             },
             {
                 title: "性别",
                 dataIndex: "sex",
                 align: "center",
                 width: 100,
-                key: "sex",
             },
             {
                 title: "职务",
                 dataIndex: "duty",
                 width: 150,
                 align: "center",
-                key: "duty",
             },
             {
                 title: "入职时间",
                 width: 200,
-                key: "entry_time",
                 dataIndex: "entry_time",
                 align: "center",
                 render: (_, record) => (
@@ -157,7 +162,6 @@ export default class Staff extends Component {
             {
                 title: "联系电话",
                 width: 200,
-                key: "phone",
                 dataIndex: "phone",
                 align: "center",
             },
@@ -166,7 +170,6 @@ export default class Staff extends Component {
                 dataIndex: "address",
                 align: "center",
                 width: 200,
-                key: "address",
                 render: (_, record) => (
                     <Space size="small">{record.address}</Space>
                 ),
@@ -175,7 +178,6 @@ export default class Staff extends Component {
                 title: "爱好",
                 dataIndex: "hobby",
                 align: "center",
-                key: "hobby",
                 width: 180,
                 render: (text, record) => (
                     <Tag color={text.length > 2 ? "green" : "blue"}>
@@ -188,7 +190,6 @@ export default class Staff extends Component {
                 dataIndex: "handle",
                 align: "center",
                 fixed: "right",
-                key: "handle",
                 width: 150,
                 render: (_, record, index) => (
                     <Space size="middle">
@@ -197,14 +198,11 @@ export default class Staff extends Component {
                         >
                             编辑
                         </LinkButton>
-                        <Popconfirm
-                            title="确认删除该员工信息吗？"
-                            okText="确认"
-                            cancelText="取消"
-                            onConfirm={() => this.handleDelete(index)}
+                        <LinkButton
+                            onClick={() => this.handleDelete(record, index)}
                         >
-                            <LinkButton>删除</LinkButton>
-                        </Popconfirm>
+                            删除
+                        </LinkButton>
                     </Space>
                 ),
             },
@@ -341,22 +339,9 @@ class StaffModal extends Component {
 
     initialValues = () => {
         this.layout = {
-            labelCol: { span: 4 },
-            wrapperCol: { span: 20 },
+            labelCol: { span: 5 },
+            wrapperCol: { span: 19 },
         };
-        this.validateMessages = {
-            required: "${label}是必填项",
-            types: {
-                number: "${label}为非数字",
-            },
-            number: {
-                range: "${label}必须在${min}到${max}之间",
-            },
-            string: {
-                range: "${label}必须是${min}到${max}个字符",
-            },
-        };
-
         this.works = [
             "前端开发",
             "软件测试",
@@ -400,12 +385,36 @@ class StaffModal extends Component {
         ];
     };
 
+    validateName = (_, value) => {
+        if (!value) {
+            return Promise.reject("请输入姓名!");
+        } else if (value.length < 2 || value.length > 4) {
+            return Promise.reject("姓名应为2-4个字符!");
+        } else {
+            return Promise.resolve();
+        }
+    };
+    validateAge = (_, value) => {
+        if (!value) {
+            return Promise.reject("请输入年龄!");
+        } else if (!/^\d+$/.test(value)) {
+            return Promise.reject("年龄应为数字!");
+        } else {
+            return Promise.resolve();
+        }
+    };
+    validatePhone = (_, value) => {
+        if (!value) {
+            return Promise.reject("请输入电话!");
+        } else if (!/^((0\d{2,3}-\d{7,8})|(1[35789]\d{9}))$/.test(value)) {
+            return Promise.reject("请确认电话格式是否正确!");
+        } else {
+            return Promise.resolve();
+        }
+    };
+
     UNSAFE_componentWillMount() {
         this.initialValues();
-
-        // const { record } = this.props;
-        // this.isUpdate = !!record;
-        // this.product = record;
     }
 
     componentDidMount() {
@@ -433,27 +442,15 @@ class StaffModal extends Component {
         const { record } = this.props;
 
         return (
-            <Form
-                ref={this.formRef}
-                {...this.layout}
-                validateMessages={this.validateMessages}
-                initialValues={record}
-            >
+            <Form ref={this.formRef} {...this.layout} initialValues={record}>
                 <Form.Item
                     label="姓名"
                     name="name"
-                    rules={[
-                        {
-                            required: true,
-                            type: "string",
-                            min: 2,
-                            max: 4,
-                        },
-                    ]}
+                    rules={[{ validator: this.validateName }]}
                 >
                     <Input
                         placeholder="请输入姓名"
-                        style={{ width: 250 }}
+                        style={{ width: 175 }}
                         prefix={<UserOutlined />}
                         allowClear
                     />
@@ -462,18 +459,13 @@ class StaffModal extends Component {
                 <Form.Item
                     label="年龄"
                     name="age"
-                    rules={[
-                        {
-                            required: true,
-                            type: "number",
-                            min: 0,
-                            max: 99,
-                        },
-                    ]}
+                    rules={[{ validator: this.validateAge }]}
                 >
                     <InputNumber
                         style={{ width: 115 }}
                         placeholder="请选择年龄"
+                        min={1}
+                        max={99}
                     />
                 </Form.Item>
 
@@ -483,7 +475,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            message: "请选择性别",
+                            message: "请选择性别!",
                         },
                     ]}
                 >
@@ -502,8 +494,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            // type: 'object',
-                            message: "职务尚未选择",
+                            message: "职务尚未选择!",
                         },
                     ]}
                 >
@@ -526,13 +517,11 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            // type: "object",
-                            message: "入职时间尚未选择",
+                            message: "入职时间尚未选择!",
                         },
                     ]}
                 >
                     <DatePicker
-                        // defaultValue={moment(record.entry_time || {}, "YYYY-MM-DD")}
                         format="YYYY/MM/DD"
                         placeholder="请选择日期"
                         style={{ width: 280 }}
@@ -543,12 +532,7 @@ class StaffModal extends Component {
                 <Form.Item
                     label="联系电话"
                     name="phone"
-                    rules={[
-                        {
-                            required: true,
-                            message: "请输入你的电话",
-                        },
-                    ]}
+                    rules={[{ validator: this.validatePhone }]}
                 >
                     <Input
                         style={{ width: 280 }}
@@ -563,7 +547,7 @@ class StaffModal extends Component {
                     rules={[
                         {
                             required: true,
-                            message: "家庭地址尚未选择",
+                            message: "家庭地址尚未选择!",
                         },
                     ]}
                 >
@@ -574,7 +558,18 @@ class StaffModal extends Component {
                     />
                 </Form.Item>
 
-                <Form.Item label="爱好" name="hobby">
+                <Form.Item
+                    name="hobby"
+                    label={
+                        <span>
+                            爱好&nbsp;
+                            <Tooltip title="至少填写一个你的爱好吧!">
+                                <QuestionCircleOutlined />
+                            </Tooltip>
+                            &nbsp;
+                        </span>
+                    }
+                >
                     <Input
                         style={{ width: 330 }}
                         placeholder="请输入爱好"
