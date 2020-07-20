@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component, PureComponent } from "react";
 import "./staff.less";
 import LinkButton from "../utils/link-button";
 import {
@@ -313,7 +313,7 @@ export default class Staff extends Component {
 }
 
 // 查询栏
-class StaffQuery extends Component {
+class StaffQuery extends PureComponent {
     handleQuery = (values) => {
         this.props.handleSubmt(values);
     };
@@ -334,7 +334,7 @@ class StaffQuery extends Component {
     }
 }
 
-class StaffModal extends Component {
+class StaffModal extends PureComponent {
     formRef = React.createRef();
 
     initialValues = () => {
