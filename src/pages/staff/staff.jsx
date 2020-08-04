@@ -1,6 +1,5 @@
 import React, { Component, PureComponent } from "react";
-import "./staff.less";
-import LinkButton from "../utils/link-button";
+import LinkButton from "../../components/link-button/link-button";
 import {
     Table,
     Tag,
@@ -21,13 +20,11 @@ import {
 import moment from "moment";
 import {
     UserOutlined,
-    PlusOutlined,
     QuestionCircleOutlined,
     ExclamationCircleOutlined,
 } from "@ant-design/icons";
-// import { reqStaff } from "../api/ajax";
 import axios from "axios";
-import "../mock";
+import "../../mock";
 
 const { Item } = Form;
 const { Option } = Select;
@@ -90,7 +87,7 @@ export default class Staff extends Component {
             const { index } = this;
             const new_staff = [...this.state.staff_details];
             /* 因为我们下面要更新state状态,react中建议我们尽量产生一个新的数组再去更新
-			所以用到扩展(浅拷贝 => 形成新的数组)*/
+			所以用到扩展(浅拷贝 => 形成新的数组) */
 
             new_staff.splice(index, 1, values);
             this.setState({
@@ -145,12 +142,12 @@ export default class Staff extends Component {
             {
                 title: "职务",
                 dataIndex: "duty",
-                width: 150,
+                width: 130,
                 align: "center",
             },
             {
                 title: "入职时间",
-                width: 200,
+                width: 150,
                 dataIndex: "entry_time",
                 align: "center",
                 render: (_, record) => (
@@ -161,7 +158,7 @@ export default class Staff extends Component {
             },
             {
                 title: "联系电话",
-                width: 200,
+                width: 150,
                 dataIndex: "phone",
                 align: "center",
             },
@@ -169,7 +166,7 @@ export default class Staff extends Component {
                 title: "家庭住址",
                 dataIndex: "address",
                 align: "center",
-                width: 200,
+                width: 180,
                 render: (_, record) => (
                     <Space size="small">{record.address}</Space>
                 ),
@@ -178,7 +175,7 @@ export default class Staff extends Component {
                 title: "爱好",
                 dataIndex: "hobby",
                 align: "center",
-                width: 180,
+                width: 120,
                 render: (text, record) => (
                     <Tag color={text.length > 2 ? "green" : "blue"}>
                         {record.hobby}
@@ -212,7 +209,7 @@ export default class Staff extends Component {
     // 请求表格数据
     getStallList = () => {
         this.setState({ loading: true });
-        axios.get("/staff", { dataType: "json" }).then((res) => {
+        axios.get("/staff-detail", { dataType: "json" }).then((res) => {
             console.log("getStallList", res);
 
             if (res.status === 200) {
@@ -224,7 +221,6 @@ export default class Staff extends Component {
         });
     };
 
-    // 仅仅是新别名而已
     UNSAFE_componentWillMount() {
         this.initColumns();
     }
@@ -236,10 +232,12 @@ export default class Staff extends Component {
     render() {
         const { visible, staff_details, loading } = this.state;
         const record = this.record || {};
-        const title = (
+
+        const title = <StaffQuery handleSubmt={this.submitEnter} />;
+
+        const extra = (
             <Button
                 type="primary"
-                icon={<PlusOutlined />}
                 onClick={() => this.setState({ visible: 1 })}
             >
                 添加
@@ -247,67 +245,57 @@ export default class Staff extends Component {
         );
 
         return (
-            <div>
-                <div className="header">
-                    <div className="header-left">员工信息</div>
-                </div>
-                <div className="submit">
-                    <StaffQuery handleSubmt={this.submitEnter} />
-                </div>
-                <div className="content">
-                    <Card title={title}>
-                        <Modal
-                            // title={this.record ? "更新信息" : "添加信息"}
-                            title="添加信息"
-                            visible={visible === 1}
-                            okText="确定"
-                            cancelText="取消"
-                            onOk={this.handleAdd}
-                            onCancel={() => {
-                                this.setState({ visible: 0 });
-                                this.formRef_current.resetFields();
-                            }}
-                        >
-                            <StaffModal
-                                // record={record}
-                                getForm={(formEntity) => {
-                                    this.formRef_current = formEntity;
-                                }}
-                            />
-                        </Modal>
+            <Card title={title} extra={extra} style={{ paddingTop: 10 }}>
+                <Modal
+                    // title={this.record ? "更新信息" : "添加信息"}
+                    title="添加信息"
+                    visible={visible === 1}
+                    okText="确定"
+                    cancelText="取消"
+                    onOk={this.handleAdd}
+                    onCancel={() => {
+                        this.setState({ visible: 0 });
+                        this.formRef_current.resetFields();
+                    }}
+                >
+                    <StaffModal
+                        // record={record}
+                        getForm={(formEntity) => {
+                            this.formRef_current = formEntity;
+                        }}
+                    />
+                </Modal>
 
-                        <Modal
-                            // title={this.record ? "更新信息" : "添加信息"}
-                            title="修改信息"
-                            visible={visible === 2}
-                            okText="确定"
-                            cancelText="取消"
-                            onOk={this.okUpate}
-                            onCancel={() => {
-                                this.setState({ visible: 0 });
-                                this.formRef_current_2.resetFields();
-                            }}
-                        >
-                            <StaffModal
-                                record={record}
-                                getForm={(formEntity) => {
-                                    this.formRef_current_2 = formEntity;
-                                }}
-                            />
-                        </Modal>
+                <Modal
+                    // title={this.record ? "更新信息" : "添加信息"}
+                    title="修改信息"
+                    visible={visible === 2}
+                    okText="确定"
+                    cancelText="取消"
+                    onOk={this.okUpate}
+                    onCancel={() => {
+                        this.setState({ visible: 0 });
+                        this.formRef_current_2.resetFields();
+                    }}
+                >
+                    <StaffModal
+                        record={record}
+                        getForm={(formEntity) => {
+                            this.formRef_current_2 = formEntity;
+                        }}
+                    />
+                </Modal>
 
-                        <Table
-                            rowKey="id"
-                            loading={loading}
-                            columns={this.columns}
-                            dataSource={staff_details}
-                            scroll={{ x: 1500 }}
-                            pagination={{ defaultPageSize: 7 }}
-                            // bordered
-                        />
-                    </Card>
-                </div>
-            </div>
+                <Table
+                    rowKey="id"
+                    loading={loading}
+                    columns={this.columns}
+                    dataSource={staff_details}
+                    scroll={{ x: 1250 }}
+                    pagination={{ defaultPageSize: 7 }}
+                    // bordered
+                />
+            </Card>
         );
     }
 }
@@ -316,19 +304,22 @@ export default class Staff extends Component {
 class StaffQuery extends PureComponent {
     handleQuery = (values) => {
         this.props.handleSubmt(values);
+        console.log("values", values);
     };
 
     render() {
         return (
             <Form layout="inline" onFinish={this.handleQuery}>
-                <Item label="员工姓名" name="name">
-                    <Input placeholder="员工姓名" allowClear />
+                <Item name="name">
+                    <Input
+                        placeholder="员工姓名"
+                        allowClear
+                        style={{ width: 230 }}
+                    />
                 </Item>
-                <Item>
-                    <Button type="primary" htmlType="submit">
-                        搜索
-                    </Button>
-                </Item>
+                <Button type="primary" htmlType="submit">
+                    搜索
+                </Button>
             </Form>
         );
     }

@@ -1,0 +1,33 @@
+.header {
+    background-color: #ffffff;
+    margin: 5px 5px 20px 5px;
+    height: 60px;
+    display: flex;
+    .header-left {
+        width: 20%;
+        height: 100%;
+        line-height: 60px;
+        font-size: 20px;
+        text-align: center;
+        position: relative;
+
+        &::after {
+            content: "";
+
+            position: absolute;
+            top: 100%;
+            right: 50%;
+            transform: translateX(50%);
+
+            border-top: 20px solid #ffffff;
+            border-bottom: 20px solid transparent;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+        }
+    }
+    .header-right {
+        width: 80%;
+        font-size: 16px;
+        text-align: right;
+    }
+}

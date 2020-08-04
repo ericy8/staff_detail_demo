@@ -5,7 +5,7 @@ const Mock = require('mockjs')
 'https://github.com/nuysoft/Mock/wiki/Mock.mock()#mockmock-rurl-rtype-templatefunction-options--'
 和Mock官网文档 */
 
-const data = Mock.mock('/staff', {
+const data = Mock.mock('/staff-detail', {
 	"result|5": [ // 意思是data数组中有10条数据
 		{
 			"id|+1": 0,

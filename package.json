@@ -9,12 +9,16 @@
         "@testing-library/user-event": "^7.1.2",
         "antd": "^4.4.1",
         "axios": "^0.19.2",
+        "canvas-nest.js": "^2.0.4",
         "craco-less": "^1.17.0",
+        "crypto-js": "^4.0.0",
         "less": "^3.11.3",
         "less-loader": "^6.2.0",
         "mockjs": "^1.1.0",
         "react": "^16.13.1",
+        "react-canvas-nest": "^1.1.1",
         "react-dom": "^16.13.1",
+        "react-router-dom": "^5.2.0",
         "react-scripts": "3.4.1"
     },
     "scripts": {
